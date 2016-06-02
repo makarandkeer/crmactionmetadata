@@ -1,0 +1,77 @@
+﻿<html>
+<head>
+    <title>CRM Action Metadata</title>
+    <link rel="stylesheet" href="../CSS/ActionTable.css" type="text/css" />
+    <script type="text/javascript" src="../../ClientGlobalContext.js.aspx" ></script>
+    <script type="text/javascript" src="../Scripts/jquery.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var actionHTML = GetActionMetadata();
+            actionHTML = actionHTML.replace(/\n/g, "");
+            actionHTML = actionHTML.replace(/"/g, "'")
+            $('#actionDIV').html(actionHTML);
+        });
+
+        function GetActionMetadata() {
+            var requestName = "mnkisv_GetActionMetadata"
+            // Creating the request XML for calling the Action
+            var requestXML = ""
+            requestXML += "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">";
+            requestXML += "  <s:Body>";
+            requestXML += "    <Execute xmlns=\"http://schemas.microsoft.com/xrm/2011/Contracts/Services\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\">";
+            requestXML += "      <request xmlns:a=\"http://schemas.microsoft.com/xrm/2011/Contracts\">";
+            requestXML += "        <a:Parameters xmlns:b=\"http://schemas.datacontract.org/2004/07/System.Collections.Generic\">";
+            requestXML += "        </a:Parameters>";
+            requestXML += "        <a:RequestId i:nil=\"true\" />";
+            requestXML += "        <a:RequestName>" + requestName + "</a:RequestName>";
+            requestXML += "      </request>";
+            requestXML += "    </Execute>";
+            requestXML += "  </s:Body>";
+            requestXML += "</s:Envelope>";
+            var req = new XMLHttpRequest();
+            req.open("POST", GetClientUrl(), false)
+            req.setRequestHeader("Accept", "application/xml, text/xml, */*");
+            req.setRequestHeader("Content-Type", "text/xml; charset=utf-8");
+            req.setRequestHeader("SOAPAction", "http://schemas.microsoft.com/xrm/2011/Contracts/Services/IOrganizationService/Execute");
+            req.send(requestXML);
+            //Get the Resonse from the CRM Execute method
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    xmlDoc = $.parseXML(req.responseText);
+                    var actionHtml = $(xmlDoc).find("b\\:value,value");
+                    return $(actionHtml).text();
+                }
+                else if (req.responseXML.xml == undefined || req.responseXML.xml == null) {
+                    GetError(req.responseText);
+                }
+            }
+        }
+        function GetClientUrl() {
+            if (typeof Xrm.Page.context == "object") {
+                clientUrl = Xrm.Page.context.getClientUrl();
+            }
+            var ServicePath = "/XRMServices/2011/Organization.svc/web";
+            return clientUrl + ServicePath;
+        }
+
+        function GetError(faultText) {
+            var errorMessage = "Unknown Error (Unable to parse the fault)";
+            try {
+                var xmlDoc = $.parseXML(faultText);
+                var xml = $(xmlDoc);
+                var errorMessages = xml.find("Message");
+                alert($(errorMessages[0]).text());
+            }
+            catch (e) {
+                alert(errorMessage);
+            }
+        }
+
+    </script>
+</head>
+<body>
+    <div id="actionDIV" class="CSSTableGenerator">
+       
+    </div>
+</body>
+</html>
